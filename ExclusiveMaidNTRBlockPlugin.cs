@@ -69,7 +69,7 @@ namespace ExclusiveMaidNTRBlock
         }
     }
 
-    [BepInPlugin("com3d25.exclusivemaidntrblock.plugin", "COM3D25 Exclusive Maid NTR Block", "0.2.0")]
+    [BepInPlugin("com3d25.exclusivemaidntrblock.plugin", "COM3D25 Exclusive Maid NTR Block", "0.1.0")]
     public class ExclusiveMaidNTRBlockPlugin : BaseUnityPlugin
     {
         internal static ManualLogSource Log;
