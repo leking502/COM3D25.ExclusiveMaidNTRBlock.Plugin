@@ -65,6 +65,8 @@ The plugin does not modify the global NTR lock stored in the player's save data,
 
 The block is applied only when there is a clear current maid context and the current maid is exclusive.
 
+Patch registration is isolated by feature module. If an optional DLC or mode is missing the expected type or method in the current game build, that module is skipped while the remaining available modules continue to work where possible.
+
 This is an early release. The Release DLL has been verified to compile. If you find missing scenes or unsupported entries, please report them through Issues or the forum thread.
 
 ## Build From Source

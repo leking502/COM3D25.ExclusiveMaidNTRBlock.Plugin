@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using BepInEx;
@@ -69,7 +70,7 @@ namespace ExclusiveMaidNTRBlock
         }
     }
 
-    [BepInPlugin("com3d25.exclusivemaidntrblock.plugin", "COM3D25 Exclusive Maid NTR Block", "0.1.0")]
+    [BepInPlugin("com3d25.exclusivemaidntrblock.plugin", "COM3D25 Exclusive Maid NTR Block", "0.1.1")]
     public class ExclusiveMaidNTRBlockPlugin : BaseUnityPlugin
     {
         internal static ManualLogSource Log;
@@ -87,95 +88,116 @@ namespace ExclusiveMaidNTRBlock
             Settings = new ExclusiveMaidNTRBlockSettings(Config);
             _harmony = new Harmony("com3d25.exclusivemaidntrblock.plugin");
 
-            try
-            {
-                PatchPostfix(AccessTools.PropertyGetter(typeof(PlayerStatusStatus), "lockNTRPlay"),
-                    nameof(ExclusiveMaidNTRBlockPatches.PlayerStatus_lockNTRPlay_Postfix));
+            PatchModule(
+                "Global lockNTRPlay override",
+                () => PatchPostfix(
+                    AccessTools.PropertyGetter(typeof(PlayerStatusStatus), "lockNTRPlay"),
+                    nameof(ExclusiveMaidNTRBlockPatches.PlayerStatus_lockNTRPlay_Postfix)));
 
-                PatchWithFinalizer(
+            PatchModule(
+                "FreeMode everyday",
+                () => PatchWithFinalizer(
                     AccessTools.Method(
                         typeof(FreeModeItemEveryday),
                         "CreateItemEverydayList",
                         new[] { typeof(FreeModeItemEveryday.ScnearioType), typeof(MaidStatusStatus) }),
                     nameof(ExclusiveMaidNTRBlockPatches.FreeModeItemEveryday_CreateItemEverydayList_Prefix),
-                    nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer));
+                    nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer)));
 
-                PatchWithFinalizer(
+            PatchModule(
+                "Private mode events",
+                () => PatchWithFinalizer(
                     AccessTools.Method(typeof(PrivateEventSelectPanel), "Setup"),
                     nameof(ExclusiveMaidNTRBlockPatches.PrivateEventSelectPanel_Setup_Prefix),
-                    nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer));
+                    nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer)));
 
-                PatchPrefix(
+            PatchModule(
+                "Scenario events",
+                () =>
+                {
+                    PatchPrefix(
                     AccessTools.Method(typeof(ScenarioData), "AddEventMaid", new[] { typeof(Maid) }),
                     nameof(ExclusiveMaidNTRBlockPatches.ScenarioData_AddEventMaid_Prefix));
 
-                PatchWithPostfixAndFinalizer(
+                    PatchWithPostfixAndFinalizer(
                     AccessTools.Method(typeof(ScenarioData), "CheckPlayableCondition", new[] { typeof(bool) }),
                     nameof(ExclusiveMaidNTRBlockPatches.ScenarioData_CheckPlayableCondition_Prefix),
                     nameof(ExclusiveMaidNTRBlockPatches.ScenarioData_CheckPlayableCondition_Postfix),
                     nameof(ExclusiveMaidNTRBlockPatches.PopScenarioContext_Finalizer));
+                });
 
-                PatchPostfix(
+            PatchModule(
+                "EmpireLife",
+                () => PatchPostfix(
                     AccessTools.Method(
                         typeof(EmpireLifeModeAPI),
                         "IsCorrectMaid",
                         new[] { typeof(EmpireLifeModeData.Data), typeof(Maid) }),
-                    nameof(ExclusiveMaidNTRBlockPatches.EmpireLifeModeAPI_IsCorrectMaid_Postfix));
+                    nameof(ExclusiveMaidNTRBlockPatches.EmpireLifeModeAPI_IsCorrectMaid_Postfix)));
 
-                PatchPostfix(
+            PatchModule(
+                "Schedule and facilities",
+                () =>
+                {
+                    PatchPostfix(
                     AccessTools.Method(
                         typeof(ScheduleAPI),
                         "VisibleNightWork",
                         new[] { typeof(int), typeof(Maid), typeof(bool) }),
                     nameof(ExclusiveMaidNTRBlockPatches.ScheduleAPI_VisibleNightWork_Postfix));
 
-                PatchPostfix(
+                    PatchPostfix(
                     AccessTools.Method(
                         typeof(ScheduleAPI),
                         "EnableNightWork",
                         new[] { typeof(int), typeof(Maid), typeof(bool), typeof(bool) }),
                     nameof(ExclusiveMaidNTRBlockPatches.ScheduleAPI_EnableNightWork_Postfix));
 
-                PatchPrefix(
+                    PatchPrefix(
                     AccessTools.Method(
                         typeof(ScheduleAPI),
                         "CheckWork",
                         new[] { typeof(Maid), typeof(int), typeof(bool), typeof(ScheduleMgr.ScheduleTime) }),
                     nameof(ExclusiveMaidNTRBlockPatches.ScheduleAPI_CheckWork_Prefix));
 
-                PatchPostfix(
+                    PatchPostfix(
                     AccessTools.Constructor(
                         typeof(ScheduleWork),
                         new[] { typeof(ScheduleType), typeof(Slot), typeof(int) }),
                     nameof(ExclusiveMaidNTRBlockPatches.ScheduleWork_Ctor_Postfix));
 
-                PatchPrefix(
+                    PatchPrefix(
                     AccessTools.Method(
                         typeof(ScheduleScene),
                         "SetNoonWorkSlot_Safe",
                         new[] { typeof(ScheduleMgr.ScheduleTime), typeof(int), typeof(int) }),
                     nameof(ExclusiveMaidNTRBlockPatches.ScheduleScene_SetNoonWorkSlot_Safe_Prefix));
 
-                PatchPrefix(
+                    PatchPrefix(
                     AccessTools.Method(
                         typeof(Facility),
                         "AllocationMaid",
                         new[] { typeof(Maid), typeof(ScheduleMgr.ScheduleTime) }),
                     nameof(ExclusiveMaidNTRBlockPatches.Facility_AllocationMaid_Prefix));
 
-                PatchPrefix(
+                    PatchPrefix(
                     AccessTools.Method(typeof(ScheduleTaskViewer), "Call"),
                     nameof(ExclusiveMaidNTRBlockPatches.ScheduleTaskViewer_Call_Prefix));
 
-                PatchPrefix(
+                    PatchPrefix(
                     AccessTools.Method(typeof(ScheduleTaskViewer), "AddYotogiTaskUnit"),
                     nameof(ExclusiveMaidNTRBlockPatches.ScheduleTaskViewer_AddYotogiTaskUnit_Prefix));
 
-                PatchPrefix(
+                    PatchPrefix(
                     AccessTools.Method(typeof(ScheduleTaskViewer), "AddWorkTaskUnit"),
                     nameof(ExclusiveMaidNTRBlockPatches.ScheduleTaskViewer_AddWorkTaskUnit_Prefix));
+                });
 
-                PatchWithFinalizer(
+            PatchModule(
+                "Honeymoon",
+                () =>
+                {
+                    PatchWithFinalizer(
                     AccessTools.Method(
                         typeof(Honeymoon.HoneymoonManager),
                         "GetExecutableEventList",
@@ -183,33 +205,45 @@ namespace ExclusiveMaidNTRBlock
                     nameof(ExclusiveMaidNTRBlockPatches.HoneymoonManager_Prefix),
                     nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer));
 
-                PatchWithFinalizer(
+                    PatchWithFinalizer(
                     AccessTools.Method(typeof(Honeymoon.HoneymoonManager), "GetFreeMode"),
                     nameof(ExclusiveMaidNTRBlockPatches.HoneymoonManager_Prefix),
                     nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer));
+                });
 
-                PatchWithFinalizer(
+            PatchModule(
+                "Yotogi class list",
+                () => PatchWithFinalizer(
                     AccessTools.Method(typeof(YotogiClassListManager), "CreateData", new[] { typeof(Maid) }),
                     nameof(ExclusiveMaidNTRBlockPatches.YotogiClassListManager_CreateData_Prefix),
-                    nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer));
+                    nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer)));
 
-                PatchWithFinalizer(
+            PatchModule(
+                "Yotogi skill list",
+                () =>
+                {
+                    PatchWithFinalizer(
                     AccessTools.Method(typeof(YotogiSkillListManager), "CreateData", new[] { typeof(Maid) }),
                     nameof(ExclusiveMaidNTRBlockPatches.YotogiSkillListManager_CreateData_Prefix),
                     nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer));
 
-                PatchPostfix(
+                    PatchPostfix(
                     AccessTools.Method(
                         typeof(YotogiSkillListManager),
                         "CreateDatas",
                         new[] { typeof(MaidStatusStatus), typeof(bool), typeof(Skill.Data.SpecialConditionType) }),
                     nameof(ExclusiveMaidNTRBlockPatches.YotogiSkillListManager_CreateDatas_Postfix));
+                });
 
-                PatchPostfix(
+            PatchModule(
+                "Yotogi skill select",
+                () =>
+                {
+                    PatchPostfix(
                     AccessTools.Method(typeof(YotogiSkillSelectManager), "OnCall"),
                     nameof(ExclusiveMaidNTRBlockPatches.YotogiSkillSelectManager_OnCall_Postfix));
 
-                PatchWithPostfixAndFinalizer(
+                    PatchWithPostfixAndFinalizer(
                     AccessTools.Method(
                         typeof(YotogiSkillSelectManager),
                         "CreateSkillButtons",
@@ -217,70 +251,83 @@ namespace ExclusiveMaidNTRBlock
                     nameof(ExclusiveMaidNTRBlockPatches.YotogiSkillSelectManager_CreateSkillButtons_Prefix),
                     nameof(ExclusiveMaidNTRBlockPatches.YotogiSkillSelectManager_CreateSkillButtons_Postfix),
                     nameof(ExclusiveMaidNTRBlockPatches.PopYotogiSkillSelectFilter_Finalizer));
+                });
 
-                PatchPostfix(
+            PatchModule(
+                "Yotogi old skill select",
+                () => PatchPostfix(
                     AccessTools.Method(typeof(YotogiOldSkillSelectManager), "OnCall"),
-                    nameof(ExclusiveMaidNTRBlockPatches.YotogiOldSkillSelectManager_OnCall_Postfix));
+                    nameof(ExclusiveMaidNTRBlockPatches.YotogiOldSkillSelectManager_OnCall_Postfix)));
 
-                PatchWithFinalizer(
+            PatchModule(
+                "Yotogi result",
+                () =>
+                {
+                    PatchWithFinalizer(
                     AccessTools.Method(typeof(YotogiResultManager), "OnCall"),
                     nameof(ExclusiveMaidNTRBlockPatches.YotogiResultManager_OnCall_Prefix),
                     nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer));
 
-                PatchWithFinalizer(
+                    PatchWithFinalizer(
                     AccessTools.Method(typeof(YotogiOldResultManager), "OnCall"),
                     nameof(ExclusiveMaidNTRBlockPatches.YotogiOldResultManager_OnCall_Prefix),
                     nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer));
+                });
 
-                PatchWithFinalizer(
+            PatchModule(
+                "Free yotogi skill select",
+                () =>
+                {
+                    PatchWithFinalizer(
                     AccessTools.Method(typeof(FreeSkillSelect), "CreateInstanceButton"),
                     nameof(ExclusiveMaidNTRBlockPatches.FreeSkillSelect_CreateInstanceButton_Prefix),
                     nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer));
 
-                PatchWithFinalizer(
+                    PatchWithFinalizer(
                     AccessTools.Method(typeof(FreeSkillSelect), "CreateCategory"),
                     nameof(ExclusiveMaidNTRBlockPatches.FreeSkillSelect_CreateCategory_Prefix),
                     nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer));
 
-                PatchWithFinalizer(
+                    PatchWithFinalizer(
                     AccessTools.Method(typeof(FreeSkillSelectOld), "CreateCategory"),
                     nameof(ExclusiveMaidNTRBlockPatches.FreeSkillSelectOld_CreateCategory_Prefix),
                     nameof(ExclusiveMaidNTRBlockPatches.PopNtrBlockOverride_Finalizer));
+                });
 
-                PatchPostfix(
+            PatchModule(
+                "Kasizuki",
+                () =>
+                {
+                    PatchPostfix(
                     AccessTools.Method(
                         typeof(PlayData.Data),
                         "IsCorrectMaid",
                         new[] { typeof(Maid), typeof(ManDataType), typeof(bool) }),
                     nameof(ExclusiveMaidNTRBlockPatches.Kasizuki_PlayData_IsCorrectMaid_Postfix));
 
-                PatchPrefix(
+                    PatchPrefix(
                     AccessTools.Method(
                         typeof(KasizukiMainMenu),
                         "StartSenario",
                         new[] { typeof(Maid), typeof(RoomData.Data) }),
                     nameof(ExclusiveMaidNTRBlockPatches.KasizukiMainMenu_StartSenario_Prefix));
 
-                PatchPrefix(
+                    PatchPrefix(
                     AccessTools.Method(
                         typeof(KasizukiMainMenu),
                         "StartFree",
                         new[] { typeof(Maid), typeof(RoomData.Data), typeof(ManData.Data), typeof(PlayData.Data) }),
                     nameof(ExclusiveMaidNTRBlockPatches.KasizukiMainMenu_StartFree_Prefix));
 
-                PatchPrefix(
+                    PatchPrefix(
                     AccessTools.Method(
                         typeof(KasizukiPlayInfoCtrl),
                         "OpenManList",
                         new[] { typeof(List<ManData.Data>), typeof(ManData.Data), typeof(Action<UIWFTabButton, ManData.Data>) }),
                     nameof(ExclusiveMaidNTRBlockPatches.KasizukiPlayInfoCtrl_OpenManList_Prefix));
+                });
 
-                Logger.LogInfo("COM3D25.ExclusiveMaidNTRBlock.Plugin loaded.");
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError("COM3D25.ExclusiveMaidNTRBlock.Plugin patch failed: " + ex);
-            }
+            Logger.LogInfo("COM3D25.ExclusiveMaidNTRBlock.Plugin loaded.");
         }
 
         private void Update()
@@ -348,6 +395,26 @@ namespace ExclusiveMaidNTRBlock
             {
                 entry.Value = value;
                 Settings.Save();
+            }
+        }
+
+        private void PatchModule(string moduleName, Action patchAction)
+        {
+            try
+            {
+                patchAction();
+                Logger.LogInfo("ExclusiveMaidNTRBlock module patched: " + moduleName);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(
+                    "ExclusiveMaidNTRBlock module skipped: " +
+                    moduleName +
+                    " (" +
+                    ex.GetType().Name +
+                    ": " +
+                    ex.Message +
+                    ")");
             }
         }
 
@@ -434,16 +501,14 @@ namespace ExclusiveMaidNTRBlock
 
     internal static class ExclusiveMaidNTRBlockPatches
     {
-        private static readonly FieldInfo FreeSkillSelectMaidField = AccessTools.Field(typeof(FreeSkillSelect), "maid_");
-        private static readonly FieldInfo FreeSkillSelectOldMaidField = AccessTools.Field(typeof(FreeSkillSelectOld), "maid_");
-        private static readonly FieldInfo YotogiSkillSelectMaidField = AccessTools.Field(typeof(YotogiSkillSelectManager), "maid_");
-        private static readonly FieldInfo YotogiSkillSelectCategoryDataArrayField =
-            AccessTools.Field(typeof(YotogiSkillSelectManager), "category_data_array_");
-        private static readonly FieldInfo YotogiOldSkillSelectMaidField = AccessTools.Field(typeof(YotogiOldSkillSelectManager), "maid_");
-        private static readonly FieldInfo YotogiOldSkillSelectCategoryDataArrayField =
-            AccessTools.Field(typeof(YotogiOldSkillSelectManager), "category_data_array_");
-        private static readonly FieldInfo YotogiResultManagerField = AccessTools.Field(typeof(YotogiResultManager), "yotogi_mgr_");
-        private static readonly FieldInfo YotogiOldResultManagerField = AccessTools.Field(typeof(YotogiOldResultManager), "yotogi_mgr_");
+        private static FieldInfo _freeSkillSelectMaidField;
+        private static FieldInfo _freeSkillSelectOldMaidField;
+        private static FieldInfo _yotogiSkillSelectMaidField;
+        private static FieldInfo _yotogiSkillSelectCategoryDataArrayField;
+        private static FieldInfo _yotogiOldSkillSelectMaidField;
+        private static FieldInfo _yotogiOldSkillSelectCategoryDataArrayField;
+        private static FieldInfo _yotogiResultManagerField;
+        private static FieldInfo _yotogiOldResultManagerField;
 
         private static FieldInfo _yotogiSkillSelectCategoryObjField;
         private static FieldInfo _yotogiSkillSelectCategoryField;
@@ -570,7 +635,7 @@ namespace ExclusiveMaidNTRBlock
         }
 
         public static void EmpireLifeModeAPI_IsCorrectMaid_Postfix(
-            EmpireLifeModeData.Data data,
+            object data,
             Maid maid,
             ref bool __result)
         {
@@ -717,7 +782,7 @@ namespace ExclusiveMaidNTRBlock
             return !IsExclusive(maid) || !IsNtrFacilityView(view_data);
         }
 
-        public static void HoneymoonManager_Prefix(Honeymoon.HoneymoonManager __instance, out bool __state)
+        public static void HoneymoonManager_Prefix(object __instance, out bool __state)
         {
             __state = IsHoneymoonEnabled() && PushNtrBlockOverrideIfExclusive(ResolveHoneymoonTargetMaid(__instance));
         }
@@ -733,21 +798,28 @@ namespace ExclusiveMaidNTRBlock
         }
 
         public static void YotogiSkillListManager_CreateDatas_Postfix(
-            ref Dictionary<int, YotogiSkillListManager.Data> __result)
+            object __result)
         {
             if (_yotogiSkillSelectNtrFilterDepth <= 0 || __result == null)
             {
                 return;
             }
 
-            List<int> removeKeys = null;
-            foreach (KeyValuePair<int, YotogiSkillListManager.Data> item in __result)
+            IDictionary result = __result as IDictionary;
+            if (result == null)
             {
-                if (item.Value != null && IsNtrYotogiSkillSelectCategory(item.Value.skillData))
+                return;
+            }
+
+            List<object> removeKeys = null;
+            foreach (DictionaryEntry item in result)
+            {
+                object skillData = GetMemberValue(item.Value, "skillData");
+                if (skillData != null && IsNtrYotogiSkillSelectCategory(skillData))
                 {
                     if (removeKeys == null)
                     {
-                        removeKeys = new List<int>();
+                        removeKeys = new List<object>();
                     }
 
                     removeKeys.Add(item.Key);
@@ -761,17 +833,17 @@ namespace ExclusiveMaidNTRBlock
 
             for (int i = 0; i < removeKeys.Count; i++)
             {
-                __result.Remove(removeKeys[i]);
+                result.Remove(removeKeys[i]);
             }
         }
 
-        public static void YotogiSkillSelectManager_OnCall_Postfix(YotogiSkillSelectManager __instance)
+        public static void YotogiSkillSelectManager_OnCall_Postfix(object __instance)
         {
             ApplyYotogiSkillSelectCategoryVisibility(__instance);
         }
 
         public static void YotogiSkillSelectManager_CreateSkillButtons_Prefix(
-            YotogiSkillSelectManager __instance,
+            object __instance,
             out bool __state)
         {
             __state = ShouldHideYotogiSkillSelectNtr(__instance);
@@ -781,7 +853,7 @@ namespace ExclusiveMaidNTRBlock
             }
         }
 
-        public static void YotogiSkillSelectManager_CreateSkillButtons_Postfix(YotogiSkillSelectManager __instance)
+        public static void YotogiSkillSelectManager_CreateSkillButtons_Postfix(object __instance)
         {
             ApplyYotogiSkillSelectCategoryVisibility(__instance);
         }
@@ -796,39 +868,39 @@ namespace ExclusiveMaidNTRBlock
             return __exception;
         }
 
-        public static void YotogiOldSkillSelectManager_OnCall_Postfix(YotogiOldSkillSelectManager __instance)
+        public static void YotogiOldSkillSelectManager_OnCall_Postfix(object __instance)
         {
             ApplyYotogiOldSkillSelectCategoryVisibility(__instance);
         }
 
-        public static void YotogiResultManager_OnCall_Prefix(YotogiResultManager __instance, out bool __state)
+        public static void YotogiResultManager_OnCall_Prefix(object __instance, out bool __state)
         {
             __state = IsYotogiResultEnabled() && PushNtrBlockOverrideIfExclusive(ResolveYotogiResultMaid(__instance));
         }
 
-        public static void YotogiOldResultManager_OnCall_Prefix(YotogiOldResultManager __instance, out bool __state)
+        public static void YotogiOldResultManager_OnCall_Prefix(object __instance, out bool __state)
         {
             __state = IsYotogiResultEnabled() && PushNtrBlockOverrideIfExclusive(ResolveYotogiOldResultMaid(__instance));
         }
 
-        public static void FreeSkillSelect_CreateInstanceButton_Prefix(FreeSkillSelect __instance, out bool __state)
+        public static void FreeSkillSelect_CreateInstanceButton_Prefix(object __instance, out bool __state)
         {
             __state = IsFreeYotogiSkillSelectEnabled() && PushNtrBlockOverrideIfExclusive(ResolveFreeSkillSelectMaid(__instance));
         }
 
-        public static void FreeSkillSelect_CreateCategory_Prefix(FreeSkillSelect __instance, out bool __state)
+        public static void FreeSkillSelect_CreateCategory_Prefix(object __instance, out bool __state)
         {
             __state = IsFreeYotogiSkillSelectEnabled() && PushNtrBlockOverrideIfExclusive(ResolveFreeSkillSelectMaid(__instance));
         }
 
-        public static void FreeSkillSelectOld_CreateCategory_Prefix(FreeSkillSelectOld __instance, out bool __state)
+        public static void FreeSkillSelectOld_CreateCategory_Prefix(object __instance, out bool __state)
         {
             __state = IsFreeYotogiSkillSelectEnabled() && PushNtrBlockOverrideIfExclusive(ResolveFreeSkillSelectOldMaid(__instance));
         }
 
         public static void Kasizuki_PlayData_IsCorrectMaid_Postfix(
             Maid maid,
-            ManDataType manType,
+            object manType,
             ref bool __result)
         {
             if (IsKasizukiEnabled() && __result && IsExclusive(maid) && IsKasizukiNtrMan(manType))
@@ -844,7 +916,7 @@ namespace ExclusiveMaidNTRBlock
                 return true;
             }
 
-            ManDataType manType = ResolveKasizukiCurrentManType();
+            object manType = ResolveKasizukiCurrentManType();
             if (!IsExclusive(targetMaid) || !IsKasizukiNtrMan(manType))
             {
                 return true;
@@ -854,7 +926,7 @@ namespace ExclusiveMaidNTRBlock
             return false;
         }
 
-        public static bool KasizukiMainMenu_StartFree_Prefix(Maid targetMaid, ManData.Data targetMan)
+        public static bool KasizukiMainMenu_StartFree_Prefix(Maid targetMaid, object targetMan)
         {
             if (!IsKasizukiEnabled())
             {
@@ -871,11 +943,17 @@ namespace ExclusiveMaidNTRBlock
         }
 
         public static void KasizukiPlayInfoCtrl_OpenManList_Prefix(
-            KasizukiPlayInfoCtrl __instance,
-            ref List<ManData.Data> manDataList,
-            ref ManData.Data selectingData)
+            object __instance,
+            object[] __args)
         {
-            if (!IsKasizukiEnabled() || manDataList == null)
+            if (!IsKasizukiEnabled() || __args == null || __args.Length < 2)
+            {
+                return;
+            }
+
+            IList manDataList = __args[0] as IList;
+            object selectingData = __args[1];
+            if (manDataList == null)
             {
                 return;
             }
@@ -885,7 +963,7 @@ namespace ExclusiveMaidNTRBlock
             {
                 if (__instance != null)
                 {
-                    maid = __instance.selectedMaid;
+                    maid = GetMemberValue(__instance, "selectedMaid") as Maid;
                 }
             }
             catch (Exception ex)
@@ -901,10 +979,25 @@ namespace ExclusiveMaidNTRBlock
                 return;
             }
 
-            manDataList = manDataList.FindAll(IsKasizukiOwnerMan);
+            IList filteredList = CreateCompatibleList(manDataList);
+            if (filteredList == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < manDataList.Count; i++)
+            {
+                object manData = manDataList[i];
+                if (IsKasizukiOwnerMan(manData))
+                {
+                    filteredList.Add(manData);
+                }
+            }
+
+            __args[0] = filteredList;
             if (selectingData != null && IsKasizukiNtrMan(selectingData))
             {
-                selectingData = manDataList.Count > 0 ? manDataList[0] : null;
+                __args[1] = filteredList.Count > 0 ? filteredList[0] : null;
             }
         }
 
@@ -1034,16 +1127,118 @@ namespace ExclusiveMaidNTRBlock
             return null;
         }
 
-        private static Maid ResolveFreeSkillSelectMaid(FreeSkillSelect selector)
+        private static FieldInfo GetCachedField(ref FieldInfo cachedField, string typeName, string fieldName)
         {
-            if (selector == null || FreeSkillSelectMaidField == null)
+            if (cachedField != null)
+            {
+                return cachedField;
+            }
+
+            Type type = AccessTools.TypeByName(typeName);
+            if (type == null)
+            {
+                return null;
+            }
+
+            cachedField = AccessTools.Field(type, fieldName);
+            return cachedField;
+        }
+
+        private static object GetMemberValue(object instance, string memberName)
+        {
+            if (instance == null || string.IsNullOrEmpty(memberName))
+            {
+                return null;
+            }
+
+            Type type = instance.GetType();
+            FieldInfo field = AccessTools.Field(type, memberName);
+            if (field != null)
+            {
+                return field.GetValue(instance);
+            }
+
+            PropertyInfo property = AccessTools.Property(type, memberName);
+            return property != null ? property.GetValue(instance, null) : null;
+        }
+
+        private static IList CreateCompatibleList(IList source)
+        {
+            if (source == null)
             {
                 return null;
             }
 
             try
             {
-                return FreeSkillSelectMaidField.GetValue(selector) as Maid;
+                IList list = Activator.CreateInstance(source.GetType()) as IList;
+                if (list != null)
+                {
+                    return list;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ExclusiveMaidNTRBlockPlugin.Log != null)
+                {
+                    ExclusiveMaidNTRBlockPlugin.Log.LogWarning("Create compatible list failed: " + ex.GetType().Name);
+                }
+            }
+
+            return null;
+        }
+
+        private static FieldInfo GetFreeSkillSelectMaidField()
+        {
+            return GetCachedField(ref _freeSkillSelectMaidField, "FreeSkillSelect", "maid_");
+        }
+
+        private static FieldInfo GetFreeSkillSelectOldMaidField()
+        {
+            return GetCachedField(ref _freeSkillSelectOldMaidField, "FreeSkillSelectOld", "maid_");
+        }
+
+        private static FieldInfo GetYotogiSkillSelectMaidField()
+        {
+            return GetCachedField(ref _yotogiSkillSelectMaidField, "YotogiSkillSelectManager", "maid_");
+        }
+
+        private static FieldInfo GetYotogiSkillSelectCategoryDataArrayField()
+        {
+            return GetCachedField(ref _yotogiSkillSelectCategoryDataArrayField, "YotogiSkillSelectManager", "category_data_array_");
+        }
+
+        private static FieldInfo GetYotogiOldSkillSelectMaidField()
+        {
+            return GetCachedField(ref _yotogiOldSkillSelectMaidField, "YotogiOldSkillSelectManager", "maid_");
+        }
+
+        private static FieldInfo GetYotogiOldSkillSelectCategoryDataArrayField()
+        {
+            return GetCachedField(ref _yotogiOldSkillSelectCategoryDataArrayField, "YotogiOldSkillSelectManager", "category_data_array_");
+        }
+
+        private static FieldInfo GetYotogiResultManagerField()
+        {
+            return GetCachedField(ref _yotogiResultManagerField, "YotogiResultManager", "yotogi_mgr_");
+        }
+
+        private static FieldInfo GetYotogiOldResultManagerField()
+        {
+            return GetCachedField(ref _yotogiOldResultManagerField, "YotogiOldResultManager", "yotogi_mgr_");
+        }
+
+        private static Maid ResolveFreeSkillSelectMaid(object selector)
+        {
+            FieldInfo maidField = GetFreeSkillSelectMaidField();
+            if (selector == null || maidField == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                return maidField.GetValue(selector) as Maid;
             }
             catch (Exception ex)
             {
@@ -1056,16 +1251,17 @@ namespace ExclusiveMaidNTRBlock
             return null;
         }
 
-        private static Maid ResolveFreeSkillSelectOldMaid(FreeSkillSelectOld selector)
+        private static Maid ResolveFreeSkillSelectOldMaid(object selector)
         {
-            if (selector == null || FreeSkillSelectOldMaidField == null)
+            FieldInfo maidField = GetFreeSkillSelectOldMaidField();
+            if (selector == null || maidField == null)
             {
                 return null;
             }
 
             try
             {
-                return FreeSkillSelectOldMaidField.GetValue(selector) as Maid;
+                return maidField.GetValue(selector) as Maid;
             }
             catch (Exception ex)
             {
@@ -1078,11 +1274,11 @@ namespace ExclusiveMaidNTRBlock
             return null;
         }
 
-        private static Maid ResolveHoneymoonTargetMaid(Honeymoon.HoneymoonManager manager)
+        private static Maid ResolveHoneymoonTargetMaid(object manager)
         {
             try
             {
-                return manager != null ? manager.targetMaid : null;
+                return GetMemberValue(manager, "targetMaid") as Maid;
             }
             catch (Exception ex)
             {
@@ -1095,16 +1291,17 @@ namespace ExclusiveMaidNTRBlock
             return null;
         }
 
-        private static Maid ResolveYotogiSkillSelectMaid(YotogiSkillSelectManager selector)
+        private static Maid ResolveYotogiSkillSelectMaid(object selector)
         {
-            if (selector == null || YotogiSkillSelectMaidField == null)
+            FieldInfo maidField = GetYotogiSkillSelectMaidField();
+            if (selector == null || maidField == null)
             {
                 return null;
             }
 
             try
             {
-                return YotogiSkillSelectMaidField.GetValue(selector) as Maid;
+                return maidField.GetValue(selector) as Maid;
             }
             catch (Exception ex)
             {
@@ -1117,16 +1314,17 @@ namespace ExclusiveMaidNTRBlock
             return null;
         }
 
-        private static Maid ResolveYotogiOldSkillSelectMaid(YotogiOldSkillSelectManager selector)
+        private static Maid ResolveYotogiOldSkillSelectMaid(object selector)
         {
-            if (selector == null || YotogiOldSkillSelectMaidField == null)
+            FieldInfo maidField = GetYotogiOldSkillSelectMaidField();
+            if (selector == null || maidField == null)
             {
                 return null;
             }
 
             try
             {
-                return YotogiOldSkillSelectMaidField.GetValue(selector) as Maid;
+                return maidField.GetValue(selector) as Maid;
             }
             catch (Exception ex)
             {
@@ -1139,16 +1337,17 @@ namespace ExclusiveMaidNTRBlock
             return null;
         }
 
-        private static Maid ResolveYotogiResultMaid(YotogiResultManager resultManager)
+        private static Maid ResolveYotogiResultMaid(object resultManager)
         {
             try
             {
-                if (resultManager == null || YotogiResultManagerField == null)
+                FieldInfo managerField = GetYotogiResultManagerField();
+                if (resultManager == null || managerField == null)
                 {
                     return null;
                 }
 
-                YotogiManager manager = YotogiResultManagerField.GetValue(resultManager) as YotogiManager;
+                YotogiManager manager = managerField.GetValue(resultManager) as YotogiManager;
                 return manager != null ? manager.maid : null;
             }
             catch (Exception ex)
@@ -1162,16 +1361,17 @@ namespace ExclusiveMaidNTRBlock
             return null;
         }
 
-        private static Maid ResolveYotogiOldResultMaid(YotogiOldResultManager resultManager)
+        private static Maid ResolveYotogiOldResultMaid(object resultManager)
         {
             try
             {
-                if (resultManager == null || YotogiOldResultManagerField == null)
+                FieldInfo managerField = GetYotogiOldResultManagerField();
+                if (resultManager == null || managerField == null)
                 {
                     return null;
                 }
 
-                YotogiOldManager manager = YotogiOldResultManagerField.GetValue(resultManager) as YotogiOldManager;
+                YotogiOldManager manager = managerField.GetValue(resultManager) as YotogiOldManager;
                 return manager != null ? manager.maid : null;
             }
             catch (Exception ex)
@@ -1185,7 +1385,7 @@ namespace ExclusiveMaidNTRBlock
             return null;
         }
 
-        private static bool ShouldHideYotogiSkillSelectNtr(YotogiSkillSelectManager selector)
+        private static bool ShouldHideYotogiSkillSelectNtr(object selector)
         {
             if (IsGlobalNtrPlayLocked())
             {
@@ -1195,9 +1395,10 @@ namespace ExclusiveMaidNTRBlock
             return IsYotogiSkillSelectEnabled() && IsExclusive(ResolveYotogiSkillSelectMaid(selector));
         }
 
-        private static void ApplyYotogiSkillSelectCategoryVisibility(YotogiSkillSelectManager selector)
+        private static void ApplyYotogiSkillSelectCategoryVisibility(object selector)
         {
-            if (selector == null || YotogiSkillSelectCategoryDataArrayField == null)
+            FieldInfo categoryDataArrayField = GetYotogiSkillSelectCategoryDataArrayField();
+            if (selector == null || categoryDataArrayField == null)
             {
                 return;
             }
@@ -1210,7 +1411,7 @@ namespace ExclusiveMaidNTRBlock
                     return;
                 }
 
-                Array categoryDataArray = YotogiSkillSelectCategoryDataArrayField.GetValue(selector) as Array;
+                Array categoryDataArray = categoryDataArrayField.GetValue(selector) as Array;
                 if (categoryDataArray == null)
                 {
                     return;
@@ -1233,8 +1434,7 @@ namespace ExclusiveMaidNTRBlock
                         parent = categoryObject.transform.parent;
                     }
 
-                    Yotogi.Category category = (Yotogi.Category)categoryValue;
-                    if (IsNtrYotogiCategory(category))
+                    if (IsNtrCategoryName(categoryValue))
                     {
                         categoryObject.SetActive(!hide);
                     }
@@ -1264,7 +1464,7 @@ namespace ExclusiveMaidNTRBlock
             }
         }
 
-        private static bool ShouldHideYotogiOldSkillSelectNtr(YotogiOldSkillSelectManager selector)
+        private static bool ShouldHideYotogiOldSkillSelectNtr(object selector)
         {
             if (IsGlobalNtrPlayLocked())
             {
@@ -1274,9 +1474,10 @@ namespace ExclusiveMaidNTRBlock
             return IsYotogiSkillSelectEnabled() && IsExclusive(ResolveYotogiOldSkillSelectMaid(selector));
         }
 
-        private static void ApplyYotogiOldSkillSelectCategoryVisibility(YotogiOldSkillSelectManager selector)
+        private static void ApplyYotogiOldSkillSelectCategoryVisibility(object selector)
         {
-            if (selector == null || YotogiOldSkillSelectCategoryDataArrayField == null)
+            FieldInfo categoryDataArrayField = GetYotogiOldSkillSelectCategoryDataArrayField();
+            if (selector == null || categoryDataArrayField == null)
             {
                 return;
             }
@@ -1289,7 +1490,7 @@ namespace ExclusiveMaidNTRBlock
                     return;
                 }
 
-                Array categoryDataArray = YotogiOldSkillSelectCategoryDataArrayField.GetValue(selector) as Array;
+                Array categoryDataArray = categoryDataArrayField.GetValue(selector) as Array;
                 if (categoryDataArray == null)
                 {
                     return;
@@ -1312,8 +1513,7 @@ namespace ExclusiveMaidNTRBlock
                         parent = categoryObject.transform.parent;
                     }
 
-                    YotogiOld.Category category = (YotogiOld.Category)categoryValue;
-                    if (IsNtrYotogiOldCategory(category))
+                    if (IsNtrCategoryName(categoryValue))
                     {
                         categoryObject.SetActive(!hide);
                     }
@@ -1350,12 +1550,13 @@ namespace ExclusiveMaidNTRBlock
                 return;
             }
 
-            if (YotogiSkillSelectCategoryDataArrayField == null)
+            FieldInfo categoryDataArrayField = GetYotogiSkillSelectCategoryDataArrayField();
+            if (categoryDataArrayField == null)
             {
                 return;
             }
 
-            Type categoryDataType = YotogiSkillSelectCategoryDataArrayField.FieldType.GetElementType();
+            Type categoryDataType = categoryDataArrayField.FieldType.GetElementType();
             if (categoryDataType == null)
             {
                 return;
@@ -1372,12 +1573,13 @@ namespace ExclusiveMaidNTRBlock
                 return;
             }
 
-            if (YotogiOldSkillSelectCategoryDataArrayField == null)
+            FieldInfo categoryDataArrayField = GetYotogiOldSkillSelectCategoryDataArrayField();
+            if (categoryDataArrayField == null)
             {
                 return;
             }
 
-            Type categoryDataType = YotogiOldSkillSelectCategoryDataArrayField.FieldType.GetElementType();
+            Type categoryDataType = categoryDataArrayField.FieldType.GetElementType();
             if (categoryDataType == null)
             {
                 return;
@@ -1412,19 +1614,15 @@ namespace ExclusiveMaidNTRBlock
             return false;
         }
 
-        private static bool IsNtrYotogiSkillSelectCategory(Skill.Data skill)
+        private static bool IsNtrYotogiSkillSelectCategory(object skill)
         {
-            return skill != null && IsNtrYotogiCategory(skill.category);
+            return skill != null && IsNtrCategoryName(GetMemberValue(skill, "category"));
         }
 
-        private static bool IsNtrYotogiCategory(Yotogi.Category category)
+        private static bool IsNtrCategoryName(object category)
         {
-            return category == Yotogi.Category.交換 || category == Yotogi.Category.乱交;
-        }
-
-        private static bool IsNtrYotogiOldCategory(YotogiOld.Category category)
-        {
-            return category == YotogiOld.Category.交換 || category == YotogiOld.Category.乱交;
+            string name = category != null ? category.ToString() : null;
+            return name == "交換" || name == "乱交";
         }
 
         private static bool IsNtrScenario(ScenarioData data)
@@ -1462,14 +1660,15 @@ namespace ExclusiveMaidNTRBlock
             return false;
         }
 
-        private static bool IsLifeModeNtrData(EmpireLifeModeData.Data data)
+        private static bool IsLifeModeNtrData(object data)
         {
-            if (data.dataNTRBlock == null)
+            object dataNtrBlock = GetMemberValue(data, "dataNTRBlock");
+            if (dataNtrBlock == null)
             {
                 return false;
             }
 
-            return data.dataNTRBlock.Value == false;
+            return dataNtrBlock is bool && (bool)dataNtrBlock == false;
         }
 
         private static bool IsNtrScheduleView(ScheduleTaskViewer.ViewData viewData)
@@ -1554,28 +1753,29 @@ namespace ExclusiveMaidNTRBlock
             return facility != null && !facility.isEnableNTR;
         }
 
-        private static bool IsKasizukiOwnerMan(ManData.Data data)
+        private static bool IsKasizukiOwnerMan(object data)
         {
-            return data != null && data.manType == ManDataType.主人公;
+            return data != null && !IsKasizukiNtrMan(data);
         }
 
-        private static bool IsKasizukiNtrMan(ManData.Data data)
+        private static bool IsKasizukiNtrMan(object data)
         {
-            return data != null && IsKasizukiNtrMan(data.manType);
+            object manType = GetMemberValue(data, "manType");
+            if (manType == null && data != null && data.GetType().IsEnum)
+            {
+                manType = data;
+            }
+
+            return manType != null && manType.ToString() != "主人公";
         }
 
-        private static bool IsKasizukiNtrMan(ManDataType manType)
-        {
-            return manType != ManDataType.主人公;
-        }
-
-        private static ManDataType ResolveKasizukiCurrentManType()
+        private static object ResolveKasizukiCurrentManType()
         {
             try
             {
                 if (GameMain.Instance != null && GameMain.Instance.KasizukiMgr != null)
                 {
-                    return (ManDataType)GameMain.Instance.KasizukiMgr.GetNowManType();
+                    return GameMain.Instance.KasizukiMgr.GetNowManType();
                 }
             }
             catch (Exception ex)
@@ -1586,7 +1786,7 @@ namespace ExclusiveMaidNTRBlock
                 }
             }
 
-            return ManDataType.主人公;
+            return null;
         }
 
         private static void ShowKasizukiBlockDialog()

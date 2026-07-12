@@ -4,7 +4,7 @@
     <LangVersion>7.3</LangVersion>
     <Nullable>disable</Nullable>
     <AssemblyName>COM3D25.ExclusiveMaidNTRBlock.Plugin</AssemblyName>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <RootNamespace>ExclusiveMaidNTRBlock</RootNamespace>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>bin\</OutputPath>
