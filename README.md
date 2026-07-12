@@ -4,7 +4,7 @@
 
 A BepInEx plugin for COM3D2.5 that blocks supported NTR-related content for maids whose contract status is `MaidStatus.Contract.Exclusive`.
 
-This repository also includes a COM3D2 (non-2.5) build at `dist/COM3D2/COM3D2.ExclusiveMaidNTRBlock.Plugin.dll`. That DLL is for COM3D2 only; do not mix it with the COM3D2.5 build.
+Releases also include a COM3D2 (non-2.5) build: `COM3D2.ExclusiveMaidNTRBlock.Plugin.dll`. That DLL is for COM3D2 only; do not mix it with the COM3D2.5 build.
 
 Non-exclusive maids are not affected.
 
@@ -20,7 +20,7 @@ Plugin file:
 
 COM3D2 (non-2.5) build:
 
-`dist/COM3D2/COM3D2.ExclusiveMaidNTRBlock.Plugin.dll`
+`COM3D2.ExclusiveMaidNTRBlock.Plugin.dll`
 
 ## Features
 
@@ -36,7 +36,7 @@ COM3D2 (non-2.5) build:
 
 ## Installation
 
-1. For COM3D2.5, download `COM3D25.ExclusiveMaidNTRBlock.Plugin.dll` from the Releases page. For COM3D2 (non-2.5), use `dist/COM3D2/COM3D2.ExclusiveMaidNTRBlock.Plugin.dll` from this repository.
+1. For COM3D2.5, download `COM3D25.ExclusiveMaidNTRBlock.Plugin.dll` from the Releases page. For COM3D2 (non-2.5), download `COM3D2.ExclusiveMaidNTRBlock.Plugin.dll`.
 2. Put the DLL into the game's `BepInEx/plugins/` directory.
 3. Start the game.
 

@@ -6,7 +6,7 @@
 
 这是一个用于 COM3D2.5 的 BepInEx 插件。
 
-仓库也提供一个 COM3D2（非 2.5）专用构建，文件在 `dist/COM3D2/COM3D2.ExclusiveMaidNTRBlock.Plugin.dll`。这个 DLL 是给 COM3D2 用的，不要和 COM3D2.5 版混用。
+Releases 里也提供一个 COM3D2（非 2.5）专用构建：`COM3D2.ExclusiveMaidNTRBlock.Plugin.dll`。这个 DLL 是给 COM3D2 用的，不要和 COM3D2.5 版混用。
 
 当女仆的契约状态是 `MaidStatus.Contract.Exclusive` 时，插件会屏蔽她相关的 NTR 内容。普通女仆不受影响。
 
@@ -22,7 +22,7 @@ https://github.com/leking502/COM3D25.ExclusiveMaidNTRBlock.Plugin/releases
 
 COM3D2（非 2.5）专用文件：
 
-`dist/COM3D2/COM3D2.ExclusiveMaidNTRBlock.Plugin.dll`
+`COM3D2.ExclusiveMaidNTRBlock.Plugin.dll`
 
 ## 主要功能
 
@@ -38,7 +38,7 @@ COM3D2（非 2.5）专用文件：
 
 ## 安装方法
 
-1. COM3D2.5 从 Releases 页面下载 `COM3D25.ExclusiveMaidNTRBlock.Plugin.dll`；COM3D2（非 2.5）使用仓库里的 `dist/COM3D2/COM3D2.ExclusiveMaidNTRBlock.Plugin.dll`
+1. COM3D2.5 从 Releases 页面下载 `COM3D25.ExclusiveMaidNTRBlock.Plugin.dll`；COM3D2（非 2.5）下载 `COM3D2.ExclusiveMaidNTRBlock.Plugin.dll`
 2. 把 DLL 放入游戏的 `BepInEx/plugins/` 目录
 3. 启动游戏
 
